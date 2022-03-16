@@ -1,7 +1,7 @@
 package schedule_test
 
 import (
-	"henkel/libs/schedule"
+	"github.com/shone/schedule"
 	"testing"
 	"runtime/debug"
 	"time"
