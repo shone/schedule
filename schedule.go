@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// A Schedule is a queue of id/timestamp pairs (items). It it similar to a time.Timer, but where
+// A Schedule is a queue of id/timestamp pairs (items). It is similar to a time.Timer, but where
 // multiple times may be specified, each with a given id.
 //
-// Items pushed into the schedule will be emited at their specified times from
+// Items pushed into the schedule will be emitted at their specified times from
 // the channel returned from Start(), according to the given Clock.
 type Schedule struct {
 	// Map of IDs to timestamps
@@ -90,7 +90,7 @@ func (s *Schedule) Start(clock Clock) chan Item {
 				}
 			}
 
-			// Wait for the item to be due.
+			// Wait for the next item to be due.
 			// (can be interrupted by a sooner item being pushed)
 			timer := clock.NewTimer(time.Duration(item.TimeUnixNano - clock.Now().UnixNano()))
 			select {
@@ -114,7 +114,7 @@ func (s *Schedule) Start(clock Clock) chan Item {
 				// another call to Push(). The counter is used to detect changes.
 				item = s.pop(item.ID, item.Counter)
 			case item = <-s.updates:
-				// An earlier item has been pushed, so we should emit that instead.
+				// An sooner item has been pushed, so we should emit that instead.
 				continue loop
 			case <-s.stop:
 				return
@@ -137,8 +137,8 @@ func (s *Schedule) Stop() {
 // Pushes an item to the schedule, which will be emitted from the channel returned by
 // Start() when its timestamp is due according to the given Clock.
 //
-// If pushing the given item results in the schedule's next earliest item changing, the new
-// earliest item is returned.
+// If the given item's timestamp comes before every other item in the schedule (i.e. becomes
+// the next item in the schedule), it is returned by Push()
 //
 // If Push() is called before Start(), it may block until Start() is called.
 // Push() may be called after Start(), which will cause the channel to emit items according
@@ -194,7 +194,7 @@ func (s *Schedule) Push(id string, timeUnixNano int64) Item {
 
 // Deletes the given item from the schedule, causing it to no longer be emitted from
 // the channel returned by Start().
-// If the current earliest item is deleted, then the new next item (if any) is returned.
+// If the current soonest item is deleted, then the new next item (if any) is returned.
 func (s *Schedule) Delete(id string) Item {
 	if id == "" {
 		panic("cannot delete schedule item with empty id")
